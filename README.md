@@ -59,6 +59,8 @@ El repositorio incluye un Dev Container: al abrirlo, el entorno ejecuta `make in
 │   └── test_api.py      # tests de la API
 ├── .devcontainer/
 │   └── devcontainer.json
+├── .github/workflows/
+│   └── ci.yml           # pipeline de integración continua
 ├── Makefile
 ├── pyproject.toml       # configuración de ruff y pytest
 ├── requirements.txt     # dependencias de la aplicación

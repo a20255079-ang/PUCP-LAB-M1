@@ -38,42 +38,33 @@ make test
 
 **Verificación.** La salida termina con una línea en rojo que dice `1 failed` y nombra el test `test_withdraw_exact_stock`. Lee el mensaje de error completo: dice qué esperaba el test y qué devolvió la aplicación.
 
-## Paso 3 — Crear el primer workflow
+## Paso 3 — Conocer el pipeline y ponerlo en marcha
 
-1. En la terminal:
+El repositorio ya trae un pipeline en `.github/workflows/ci.yml`. No tienes que escribirlo desde cero: en este paso lo lees y lo haces correr. En los pasos 6 y 7 le agregarás bloques ya preparados.
+
+1. En el explorador de archivos (barra izquierda), abre `.github/workflows/ci.yml`. Cada parte tiene un comentario que explica qué hace. Resumen:
+
+| Parte del archivo | Qué significa |
+| --- | --- |
+| `on: pull_request` | El pipeline corre cada vez que se abre o actualiza un PR hacia `main` |
+| `jobs:` → `build-and-test:` | Un job: un grupo de pasos que corre en una máquina de GitHub |
+| `runs-on: ubuntu-latest` | La máquina donde corre el job: un Linux que GitHub crea y destruye en cada ejecución |
+| `steps:` | Los pasos, en orden. Si uno falla, los siguientes no corren y el job queda en rojo |
+| `uses:` | Reutiliza una acción ya publicada, por ejemplo descargar el código o instalar Python |
+| `run:` | Ejecuta un comando, igual que si lo escribieras en tu terminal |
+
+2. El pipeline solo corre cuando hay un PR, y un PR necesita al menos un cambio. En la terminal, crea tu rama:
 
 ```bash
 git checkout -b feature/ci
-mkdir -p .github/workflows
 ```
 
-2. En el explorador de archivos (barra izquierda), clic derecho sobre la carpeta `.github/workflows` → `New File` → nombre `ci.yml`.
-3. Pega este contenido exacto. La indentación importa: dos espacios por nivel, nunca tabulaciones.
-
-```yaml
-name: CI
-on:
-  pull_request:
-    branches: [main]
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - run: pip install -r requirements.txt -r requirements-dev.txt
-      - run: ruff check .
-      - run: pytest --cov=app --cov-fail-under=80
-```
-
-4. Guarda el archivo (`Ctrl+S`). En la terminal:
+3. Abre `README.md`. Debajo del título `# PUCP-LAB-M1` agrega una línea con `Alumno: <tu nombre completo>`. Guarda (`Ctrl+S`).
+4. En la terminal:
 
 ```bash
 git add .
-git commit -m "ci: workflow con lint y tests"
+git commit -m "docs: agregar nombre del alumno"
 git push -u origin feature/ci
 ```
 
@@ -110,7 +101,7 @@ git push
 
 ## Paso 6 — Detectar librerías vulnerables
 
-1. Abre `.github/workflows/ci.yml`. Al final del archivo, al mismo nivel de indentación que `build-and-test`, agrega el segundo job:
+1. Abre `.github/workflows/ci.yml`. Ve al final del archivo, después de la última línea (`- run: pytest ...`), y pega el segundo job. La palabra `security:` debe quedar exactamente debajo de `build-and-test:`, con dos espacios al inicio. La indentación importa: usa espacios, nunca tabulaciones.
 
 ```yaml
   security:
@@ -171,6 +162,48 @@ Si `import os` ya existe al inicio del archivo, no lo dupliques.
 6. Guarda. En la terminal `make test` debe pasar. Commit con mensaje `fix: leer api key desde variable de entorno` y push.
 
 **Verificación.** Ambos checks, `build-and-test` y `security`, están en verde.
+
+Si algún check falla por un error de formato del archivo (por ejemplo `Invalid workflow file`), compara tu `ci.yml` con la versión completa esperada en este punto:
+
+```yaml
+# Pipeline de integración continua.
+# GitHub lo ejecuta cada vez que se abre o actualiza un pull request hacia main.
+name: CI
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  # Job 1: revisa el estilo del código (lint) y ejecuta los tests.
+  build-and-test:
+    runs-on: ubuntu-latest # máquina virtual de GitHub donde corre el job
+    steps:
+      # Descarga el código de la rama del pull request.
+      - uses: actions/checkout@v4
+      # Instala Python 3.12 y guarda en caché las librerías descargadas.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      # Instala las librerías de la aplicación y de desarrollo.
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      # Lint: falla si el código no respeta el estándar del equipo.
+      - run: ruff check .
+      # Tests: falla si un test no pasa o si la cobertura es menor a 80 %.
+      - run: pytest --cov=app --cov-fail-under=80
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit
+      - run: pip-audit -r requirements.txt
+      - name: gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks dir . --redact --verbose
+```
 
 ## Paso 8 — Proteger la rama principal
 
