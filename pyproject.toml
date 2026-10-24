@@ -16,6 +16,3 @@ testpaths = ["tests"]
 filterwarnings = [
     "ignore:Using `httpx` with `starlette.testclient` is deprecated",
 ]
-
-[tool.coverage.run]
-relative_files = true
