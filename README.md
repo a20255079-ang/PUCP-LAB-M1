@@ -66,3 +66,4 @@ El repositorio incluye un Dev Container: al abrirlo, el entorno ejecuta `make in
 ├── requirements.txt     # dependencias de la aplicación
 └── requirements-dev.txt # dependencias de desarrollo
 ```
+TEST
